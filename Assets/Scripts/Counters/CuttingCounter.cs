@@ -3,104 +3,146 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CuttingCounter : BaseCounter, IHasProgress {
+public class CuttingCounter : BaseCounter, IHasProgress
+{
 
-
+    // Event: Bir kesme iþlemi yapýldýðýnda tetiklenir
     public static event EventHandler OnAnyCut;
 
-    new public static void ResetStaticData() {
+    // Statik verileri sýfýrlar
+    new public static void ResetStaticData()
+    {
         OnAnyCut = null;
     }
 
-
+    // Event: Kesme iþlemi sýrasýnda ilerleme deðiþtiðinde tetiklenir
     public event EventHandler<IHasProgress.OnProgressChangedEventArgs> OnProgressChanged;
+
+    // Event: Kesme iþlemi tamamlandýðýnda tetiklenir
     public event EventHandler OnCut;
 
-
+    // Kesme tariflerinin dizisi
     [SerializeField] private CuttingRecipeSO[] cuttingRecipeSOArray;
 
-
+    // Kesme iþlemi ilerleme durumu
     private int cuttingProgress;
 
-
-    public override void Interact(Player player) {
-        if (!HasKitchenObject()) {
-            // There is no KitchenObject here
-            if (player.HasKitchenObject()) {
-                // Player is carrying something
-                if (HasRecipeWithInput(player.GetKitchenObject().GetKitchenObjectSO())) {
-                    // Player carrying something that can be Cut
+    // Player'ýn etkileþimde bulunduðu kesme tezgahý
+    public override void Interact(Player player)
+    {
+        if (!HasKitchenObject())
+        {
+            // Tezgah boþsa ve oyuncu taþýyor
+            if (player.HasKitchenObject())
+            {
+                // Oyuncu kesilebilecek bir þey taþýyor
+                if (HasRecipeWithInput(player.GetKitchenObject().GetKitchenObjectSO()))
+                {
+                    // Oyuncu kesilebilen bir nesne taþýyor, iþlemi baþlat
                     player.GetKitchenObject().SetKitchenObjectParent(this);
                     cuttingProgress = 0;
 
+                    // Tarife göre kesme iþlemi baþlatýlýyor
                     CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
 
-                    OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
+                    // Kesme ilerlemesi normalleþtirilmiþ olarak event'e gönderilir
+                    OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
+                    {
                         progressNormalized = (float)cuttingProgress / cuttingRecipeSO.cuttingProgressMax
                     });
                 }
-            } else {
-                // Player not carrying anything
             }
-        } else {
-            // There is a KitchenObject here
-            if (player.HasKitchenObject()) {
-                // Player is carrying something
-                if (player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject)) {
-                    // Player is holding a Plate
-                    if (plateKitchenObject.TryAddIngredient(GetKitchenObject().GetKitchenObjectSO())) {
+            else
+            {
+                // Oyuncu hiçbir þey taþýmýyor
+            }
+        }
+        else
+        {
+            // Tezgah zaten dolu
+            if (player.HasKitchenObject())
+            {
+                // Oyuncu baþka bir þey taþýyor
+                if (player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject))
+                {
+                    // Oyuncu bir tabak taþýyor
+                    if (plateKitchenObject.TryAddIngredient(GetKitchenObject().GetKitchenObjectSO()))
+                    {
+                        // Tabak içine malzeme ekleniyor
                         GetKitchenObject().DestroySelf();
                     }
                 }
-            } else {
-                // Player is not carrying anything
+            }
+            else
+            {
+                // Oyuncu hiçbir þey taþýmýyor
                 GetKitchenObject().SetKitchenObjectParent(player);
             }
         }
     }
 
-    public override void InteractAlternate(Player player) {
-        if (HasKitchenObject() && HasRecipeWithInput(GetKitchenObject().GetKitchenObjectSO())) {
-            // There is a KitchenObject here AND it can be cut
+    // Kesme iþleminin ikinci etkileþimi
+    public override void InteractAlternate(Player player)
+    {
+        if (HasKitchenObject() && HasRecipeWithInput(GetKitchenObject().GetKitchenObjectSO()))
+        {
+            // Eðer tezgahta bir nesne varsa ve kesilebiliyorsa
             cuttingProgress++;
 
+            // Kesme iþlemi tetikleniyor
             OnCut?.Invoke(this, EventArgs.Empty);
             OnAnyCut?.Invoke(this, EventArgs.Empty);
 
             CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
 
-            OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
+            // Kesme iþlemi ilerlemesi güncelleniyor
+            OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
+            {
                 progressNormalized = (float)cuttingProgress / cuttingRecipeSO.cuttingProgressMax
             });
 
-            if (cuttingProgress >= cuttingRecipeSO.cuttingProgressMax) {
+            // Kesme iþlemi tamamlandýðýnda nesne üretimi yapýlýr
+            if (cuttingProgress >= cuttingRecipeSO.cuttingProgressMax)
+            {
                 KitchenObjectSO outputKitchenObjectSO = GetOutputForInput(GetKitchenObject().GetKitchenObjectSO());
 
+                // Ýlk nesne yok ediliyor
                 GetKitchenObject().DestroySelf();
 
+                // Kesilen nesne ortaya çýkarýlýyor
                 KitchenObject.SpawnKitchenObject(outputKitchenObjectSO, this);
             }
         }
     }
 
-    private bool HasRecipeWithInput(KitchenObjectSO inputKitchenObjectSO) {
+    // Verilen bir mutfak objesi için bir kesme tarifinin olup olmadýðýný kontrol eder
+    private bool HasRecipeWithInput(KitchenObjectSO inputKitchenObjectSO)
+    {
         CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(inputKitchenObjectSO);
         return cuttingRecipeSO != null;
     }
 
-
-    private KitchenObjectSO GetOutputForInput(KitchenObjectSO inputKitchenObjectSO) {
+    // Bir girdi objesi için çýkýþ objesini döndürür
+    private KitchenObjectSO GetOutputForInput(KitchenObjectSO inputKitchenObjectSO)
+    {
         CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(inputKitchenObjectSO);
-        if (cuttingRecipeSO != null) {
+        if (cuttingRecipeSO != null)
+        {
             return cuttingRecipeSO.output;
-        } else {
+        }
+        else
+        {
             return null;
         }
     }
 
-    private CuttingRecipeSO GetCuttingRecipeSOWithInput(KitchenObjectSO inputKitchenObjectSO) {
-        foreach (CuttingRecipeSO cuttingRecipeSO in cuttingRecipeSOArray) {
-            if (cuttingRecipeSO.input == inputKitchenObjectSO) {
+    // Girdi objesiyle ilgili kesme tarifini bulur
+    private CuttingRecipeSO GetCuttingRecipeSOWithInput(KitchenObjectSO inputKitchenObjectSO)
+    {
+        foreach (CuttingRecipeSO cuttingRecipeSO in cuttingRecipeSOArray)
+        {
+            if (cuttingRecipeSO.input == inputKitchenObjectSO)
+            {
                 return cuttingRecipeSO;
             }
         }

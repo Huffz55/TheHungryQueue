@@ -1,24 +1,25 @@
 using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.InputSystem; // Yeni Unity Input System'ýný kullanmak için gerekli
 
-public class GameInput : MonoBehaviour {
+public class GameInput : MonoBehaviour
+{
 
-
+    // Girdi ayarlarýnýn PlayerPrefs'te saklanacaðý anahtar
     private const string PLAYER_PREFS_BINDINGS = "InputBindings";
 
-
+    // Singleton eriþimi (tek bir GameInput nesnesi)
     public static GameInput Instance { get; private set; }
 
+    // Girdi olaylarý
+    public event EventHandler OnInteractAction;              // Etkileþim tuþuna basýldýðýnda
+    public event EventHandler OnInteractAlternateAction;     // Alternatif etkileþim tuþuna basýldýðýnda
+    public event EventHandler OnPauseAction;                 // Duraklatma tuþuna basýldýðýnda
+    public event EventHandler OnBindingRebind;               // Tuþ atamalarý deðiþtirildiðinde
 
-
-    public event EventHandler OnInteractAction;
-    public event EventHandler OnInteractAlternateAction;
-    public event EventHandler OnPauseAction;
-    public event EventHandler OnBindingRebind;
-
-
-    public enum Binding {
+    // Kullanýcý tarafýndan atanabilecek tüm eylemleri temsil eden enum
+    public enum Binding
+    {
         Move_Up,
         Move_Down,
         Move_Left,
@@ -31,28 +32,34 @@ public class GameInput : MonoBehaviour {
         Gamepad_Pause
     }
 
-
+    // InputAction'larý içeren otomatik oluþturulmuþ sýnýf (Input System'dan)
     private PlayerInputActions playerInputActions;
 
-
-    private void Awake() {
+    private void Awake()
+    {
         Instance = this;
 
-
+        // Input sisteminden gelen sýnýfýn örneðini oluþtur
         playerInputActions = new PlayerInputActions();
 
-        if (PlayerPrefs.HasKey(PLAYER_PREFS_BINDINGS)) {
+        // Eðer kullanýcý daha önce özel tuþ atamalarý yaptýysa onlarý yükle
+        if (PlayerPrefs.HasKey(PLAYER_PREFS_BINDINGS))
+        {
             playerInputActions.LoadBindingOverridesFromJson(PlayerPrefs.GetString(PLAYER_PREFS_BINDINGS));
         }
 
+        // Girdi sistemi aktif hale getirilir
         playerInputActions.Player.Enable();
 
+        // Girdi olaylarýna dinleyici ekle
         playerInputActions.Player.Interact.performed += Interact_performed;
         playerInputActions.Player.InteractAlternate.performed += InteractAlternate_performed;
         playerInputActions.Player.Pause.performed += Pause_performed;
     }
 
-    private void OnDestroy() {
+    private void OnDestroy()
+    {
+        // Oyun nesnesi yok edildiðinde olaylardan çýk ve belleði temizle
         playerInputActions.Player.Interact.performed -= Interact_performed;
         playerInputActions.Player.InteractAlternate.performed -= InteractAlternate_performed;
         playerInputActions.Player.Pause.performed -= Pause_performed;
@@ -60,28 +67,37 @@ public class GameInput : MonoBehaviour {
         playerInputActions.Dispose();
     }
 
-    private void Pause_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj) {
+    // Duraklatma tuþuna basýldýðýnda çaðrýlýr
+    private void Pause_performed(InputAction.CallbackContext obj)
+    {
         OnPauseAction?.Invoke(this, EventArgs.Empty);
     }
 
-    private void InteractAlternate_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj) {
+    // Alternatif etkileþim tuþuna basýldýðýnda çaðrýlýr
+    private void InteractAlternate_performed(InputAction.CallbackContext obj)
+    {
         OnInteractAlternateAction?.Invoke(this, EventArgs.Empty);
     }
 
-    private void Interact_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj) {
+    // Etkileþim tuþuna basýldýðýnda çaðrýlýr
+    private void Interact_performed(InputAction.CallbackContext obj)
+    {
         OnInteractAction?.Invoke(this, EventArgs.Empty);
     }
 
-    public Vector2 GetMovementVectorNormalized() {
+    // Kullanýcýnýn hareket girdisini alýr ve normalize eder
+    public Vector2 GetMovementVectorNormalized()
+    {
         Vector2 inputVector = playerInputActions.Player.Move.ReadValue<Vector2>();
-
-        inputVector = inputVector.normalized;
-
+        inputVector = inputVector.normalized; // Yön vektörünü normalize eder
         return inputVector;
     }
 
-    public string GetBindingText(Binding binding) {
-        switch (binding) {
+    // Belirli bir tuþ atamasýnýn ekranda görünen metnini döndürür
+    public string GetBindingText(Binding binding)
+    {
+        switch (binding)
+        {
             default:
             case Binding.Move_Up:
                 return playerInputActions.Player.Move.bindings[1].ToDisplayString();
@@ -106,13 +122,18 @@ public class GameInput : MonoBehaviour {
         }
     }
 
-    public void RebindBinding(Binding binding, Action onActionRebound) {
+    // Kullanýcýnýn belirli bir tuþ atamasýný deðiþtirmesine olanak tanýr
+    public void RebindBinding(Binding binding, Action onActionRebound)
+    {
+        // Geçici olarak input'u devre dýþý býrak
         playerInputActions.Player.Disable();
 
         InputAction inputAction;
         int bindingIndex;
 
-        switch (binding) {
+        // Hangi input action ve binding index'ine göre yeniden atama yapýlacaðýný belirle
+        switch (binding)
+        {
             default:
             case Binding.Move_Up:
                 inputAction = playerInputActions.Player.Move;
@@ -156,18 +177,21 @@ public class GameInput : MonoBehaviour {
                 break;
         }
 
+        // Yeni tuþ atamasýný baþlat
         inputAction.PerformInteractiveRebinding(bindingIndex)
             .OnComplete(callback => {
-                callback.Dispose();
-                playerInputActions.Player.Enable();
-                onActionRebound();
+                callback.Dispose(); // Bellek temizliði
+                playerInputActions.Player.Enable(); // Girdiyi tekrar aktif et
+                onActionRebound(); // Dýþarýdan gelen callback'i çalýþtýr
 
+                // Yeni tuþ atamasýný kaydet
                 PlayerPrefs.SetString(PLAYER_PREFS_BINDINGS, playerInputActions.SaveBindingOverridesAsJson());
                 PlayerPrefs.Save();
 
+                // Olayý tetikle
                 OnBindingRebind?.Invoke(this, EventArgs.Empty);
             })
-            .Start();
+            .Start(); // Rebinding'i baþlat
     }
 
 }

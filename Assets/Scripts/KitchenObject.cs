@@ -2,66 +2,87 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class KitchenObject : MonoBehaviour {
+// KitchenObject: Oyun içindeki mutfak nesnelerini temsil eden sýnýf
+public class KitchenObject : MonoBehaviour
+{
 
-
+    // Bu nesnenin ScriptableObject verisi (örneðin tipi, prefab'ý vs.)
     [SerializeField] private KitchenObjectSO kitchenObjectSO;
 
-
+    // Bu nesnenin þu anki sahibi (örneðin tezgah, oyuncu gibi bir nesne)
     private IKitchenObjectParent kitchenObjectParent;
 
-
-    public KitchenObjectSO GetKitchenObjectSO() {
+    // Bu KitchenObject’e ait KitchenObjectSO verisini döner
+    public KitchenObjectSO GetKitchenObjectSO()
+    {
         return kitchenObjectSO;
     }
 
-    public void SetKitchenObjectParent(IKitchenObjectParent kitchenObjectParent) {
-        if (this.kitchenObjectParent != null) {
+    // KitchenObject’e yeni bir sahip atar
+    public void SetKitchenObjectParent(IKitchenObjectParent kitchenObjectParent)
+    {
+        // Önceki sahibe ait nesne referansý temizlenir
+        if (this.kitchenObjectParent != null)
+        {
             this.kitchenObjectParent.ClearKitchenObject();
         }
 
         this.kitchenObjectParent = kitchenObjectParent;
 
-        if (kitchenObjectParent.HasKitchenObject()) {
+        // Yeni sahibe zaten bir nesne atanmýþsa hata ver
+        if (kitchenObjectParent.HasKitchenObject())
+        {
             Debug.LogError("IKitchenObjectParent already has a KitchenObject!");
         }
 
+        // Yeni sahibin KitchenObject referansý olarak bu nesne atanýr
         kitchenObjectParent.SetKitchenObject(this);
 
+        // KitchenObject, sahibin nesnesine fiziksel olarak yerleþtirilir
         transform.parent = kitchenObjectParent.GetKitchenObjectFollowTransform();
         transform.localPosition = Vector3.zero;
     }
 
-    public IKitchenObjectParent GetKitchenObjectParent() {
+    // Bu KitchenObject’in þu anki sahibini döner
+    public IKitchenObjectParent GetKitchenObjectParent()
+    {
         return kitchenObjectParent;
     }
 
-    public void DestroySelf() {
+    // Bu KitchenObject’i oyundan siler ve sahibin referansýný temizler
+    public void DestroySelf()
+    {
         kitchenObjectParent.ClearKitchenObject();
-
         Destroy(gameObject);
     }
 
-    public bool TryGetPlate(out PlateKitchenObject plateKitchenObject) {
-        if (this is PlateKitchenObject) {
+    // Bu nesne bir tabak mý? Deðilse null döner, PlateKitchenObject olarak cast eder
+    public bool TryGetPlate(out PlateKitchenObject plateKitchenObject)
+    {
+        if (this is PlateKitchenObject)
+        {
             plateKitchenObject = this as PlateKitchenObject;
             return true;
-        } else {
+        }
+        else
+        {
             plateKitchenObject = null;
             return false;
         }
     }
 
-
-
-    public static KitchenObject SpawnKitchenObject(KitchenObjectSO kitchenObjectSO, IKitchenObjectParent kitchenObjectParent) {
+    // Yeni bir KitchenObject üretir ve belirli bir sahibi olur
+    public static KitchenObject SpawnKitchenObject(KitchenObjectSO kitchenObjectSO, IKitchenObjectParent kitchenObjectParent)
+    {
+        // ScriptableObject’in prefab'ýný sahneye instantiate eder
         Transform kitchenObjectTransform = Instantiate(kitchenObjectSO.prefab);
 
+        // Üretilen prefab’tan KitchenObject bileþenini al
         KitchenObject kitchenObject = kitchenObjectTransform.GetComponent<KitchenObject>();
-        
+
+        // Yeni KitchenObject’in sahibini belirle
         kitchenObject.SetKitchenObjectParent(kitchenObjectParent);
 
         return kitchenObject;
     }
-
 }
