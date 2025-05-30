@@ -2,34 +2,51 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlateIconsUI : MonoBehaviour {
+public class PlateIconsUI : MonoBehaviour
+{
 
-
+    // PlateKitchenObject'a referans, tabaða eklenen malzemeleri yönetir
     [SerializeField] private PlateKitchenObject plateKitchenObject;
+
+    // Ikonlarý göstermek için kullanýlan þablon
     [SerializeField] private Transform iconTemplate;
 
-
-    private void Awake() {
+    // Baþlangýçta iconTemplate'in görünmemesini saðla
+    private void Awake()
+    {
         iconTemplate.gameObject.SetActive(false);
     }
 
-    private void Start() {
+    // Baþlangýçta PlateKitchenObject'teki malzeme eklenme olayýný dinlemeye baþla
+    private void Start()
+    {
         plateKitchenObject.OnIngredientAdded += PlateKitchenObject_OnIngredientAdded;
     }
 
-    private void PlateKitchenObject_OnIngredientAdded(object sender, PlateKitchenObject.OnIngredientAddedEventArgs e) {
-        UpdateVisual();
+    // PlateKitchenObject'a malzeme eklendiðinde tetiklenen olay fonksiyonu
+    private void PlateKitchenObject_OnIngredientAdded(object sender, PlateKitchenObject.OnIngredientAddedEventArgs e)
+    {
+        UpdateVisual();  // Görseli güncelle
     }
 
-    private void UpdateVisual() {
-        foreach (Transform child in transform) {
+    // Görselleri (ikonlarý) güncelleyen fonksiyon
+    private void UpdateVisual()
+    {
+        // Mevcut tüm çocuk nesnelerini sil
+        foreach (Transform child in transform)
+        {
+            // iconTemplate'i hariç tutarak diðer tüm çocuklarý sil
             if (child == iconTemplate) continue;
             Destroy(child.gameObject);
         }
 
-        foreach (KitchenObjectSO kitchenObjectSO in plateKitchenObject.GetKitchenObjectSOList()) {
+        // PlateKitchenObject içindeki tüm KitchenObjectSO'lar için ikonlarý oluþtur
+        foreach (KitchenObjectSO kitchenObjectSO in plateKitchenObject.GetKitchenObjectSOList())
+        {
+            // Yeni bir ikon nesnesi oluþtur
             Transform iconTransform = Instantiate(iconTemplate, transform);
-            iconTransform.gameObject.SetActive(true);
+            iconTransform.gameObject.SetActive(true);  // Ýkonu aktif hale getir
+            // Yeni oluþturulan ikona ilgili KitchenObjectSO'yu ayarla
             iconTransform.GetComponent<PlateIconsSingleUI>().SetKitchenObjectSO(kitchenObjectSO);
         }
     }

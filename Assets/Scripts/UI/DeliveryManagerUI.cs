@@ -2,43 +2,66 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DeliveryManagerUI : MonoBehaviour {
+public class DeliveryManagerUI : MonoBehaviour
+{
 
-
+    // UI elemanlarý:
+    // - container: Tüm teslimat tariflerinin yerleþtirileceði ana konteyner
+    // - recipeTemplate: Her bir tarifi temsil eden þablon (prefab)
     [SerializeField] private Transform container;
     [SerializeField] private Transform recipeTemplate;
 
-
-    private void Awake() {
+    // Awake metodunda recipeTemplate þablonunun görünmesini engelliyoruz,
+    // çünkü sadece prefab olarak kullanýlacak.
+    private void Awake()
+    {
         recipeTemplate.gameObject.SetActive(false);
     }
 
-    private void Start() {
-        DeliveryManager.Instance.OnRecipeSpawned += DeliveryManager_OnRecipeSpawned;
-        DeliveryManager.Instance.OnRecipeCompleted += DeliveryManager_OnRecipeCompleted;
+    // Start metodunda DeliveryManager'dan gelen olaylara abone oluyoruz
+    // ve UI'yý güncellemek için UpdateVisual() metodunu çaðýrýyoruz.
+    private void Start()
+    {
+        DeliveryManager.Instance.OnRecipeSpawned += DeliveryManager_OnRecipeSpawned;   // Yeni bir tarif oluþturulduðunda
+        DeliveryManager.Instance.OnRecipeCompleted += DeliveryManager_OnRecipeCompleted; // Tarif tamamlandýðýnda
 
+        // Baþlangýçta UI'yi güncelliyoruz.
         UpdateVisual();
     }
 
-    private void DeliveryManager_OnRecipeCompleted(object sender, System.EventArgs e) {
+    // Tarif tamamlandýðýnda UI'yi güncelleyen metod
+    private void DeliveryManager_OnRecipeCompleted(object sender, System.EventArgs e)
+    {
         UpdateVisual();
     }
 
-    private void DeliveryManager_OnRecipeSpawned(object sender, System.EventArgs e) {
+    // Yeni bir tarif oluþturulduðunda UI'yi güncelleyen metod
+    private void DeliveryManager_OnRecipeSpawned(object sender, System.EventArgs e)
+    {
         UpdateVisual();
     }
 
-    private void UpdateVisual() {
-        foreach (Transform child in container) {
-            if (child == recipeTemplate) continue;
-            Destroy(child.gameObject);
+    // UI elemanlarýný güncelleyen metod
+    // 1. Öncelikle mevcut tüm öðeleri (þablon hariç) temizliyoruz.
+    // 2. DeliveryManager'dan gelen tarifleri alýp UI'ye ekliyoruz.
+    private void UpdateVisual()
+    {
+        // 1. Önceden oluþturulmuþ tüm öðeleri temizliyoruz.
+        foreach (Transform child in container)
+        {
+            if (child == recipeTemplate) continue; // Þablonu geçiyoruz
+            Destroy(child.gameObject);  // Diðer tüm öðeleri yok ediyoruz.
         }
 
-        foreach (RecipeSO recipeSO in DeliveryManager.Instance.GetWaitingRecipeSOList()) {
+        // 2. DeliveryManager'dan gelen tarifleri UI'ye ekliyoruz.
+        foreach (RecipeSO recipeSO in DeliveryManager.Instance.GetWaitingRecipeSOList())
+        {
+            // Þablon tarifin kopyasýný oluþturuyoruz
             Transform recipeTransform = Instantiate(recipeTemplate, container);
-            recipeTransform.gameObject.SetActive(true);
+            recipeTransform.gameObject.SetActive(true); // Öðeyi görünür yapýyoruz.
+
+            // DeliveryManagerSingleUI bileþenine tarif verilerini gönderiyoruz.
             recipeTransform.GetComponent<DeliveryManagerSingleUI>().SetRecipeSO(recipeSO);
         }
     }
-
 }

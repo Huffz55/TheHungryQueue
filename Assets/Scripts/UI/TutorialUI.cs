@@ -3,41 +3,55 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-public class TutorialUI : MonoBehaviour {
+public class TutorialUI : MonoBehaviour
+{
 
+    // Kontrol tuþlarý için TextMeshPro referanslarý
+    [SerializeField] private TextMeshProUGUI keyMoveUpText;            // Yukarý hareket tuþu
+    [SerializeField] private TextMeshProUGUI keyMoveDownText;          // Aþaðý hareket tuþu
+    [SerializeField] private TextMeshProUGUI keyMoveLeftText;          // Sola hareket tuþu
+    [SerializeField] private TextMeshProUGUI keyMoveRightText;         // Saða hareket tuþu
+    [SerializeField] private TextMeshProUGUI keyInteractText;          // Etkileþim tuþu
+    [SerializeField] private TextMeshProUGUI keyInteractAlternateText; // Alternatif etkileþim tuþu
+    [SerializeField] private TextMeshProUGUI keyPauseText;             // Duraklatma tuþu
+    [SerializeField] private TextMeshProUGUI keyGamepadInteractText;   // Gamepad etkileþim tuþu
+    [SerializeField] private TextMeshProUGUI keyGamepadInteractAlternateText; // Gamepad alternatif etkileþim tuþu
+    [SerializeField] private TextMeshProUGUI keyGamepadPauseText;      // Gamepad duraklatma tuþu
 
-    [SerializeField] private TextMeshProUGUI keyMoveUpText;
-    [SerializeField] private TextMeshProUGUI keyMoveDownText;
-    [SerializeField] private TextMeshProUGUI keyMoveLeftText;
-    [SerializeField] private TextMeshProUGUI keyMoveRightText;
-    [SerializeField] private TextMeshProUGUI keyInteractText;
-    [SerializeField] private TextMeshProUGUI keyInteractAlternateText;
-    [SerializeField] private TextMeshProUGUI keyPauseText;
-    [SerializeField] private TextMeshProUGUI keyGamepadInteractText;
-    [SerializeField] private TextMeshProUGUI keyGamepadInteractAlternateText;
-    [SerializeField] private TextMeshProUGUI keyGamepadPauseText;
-
-
-    private void Start() {
+    private void Start()
+    {
+        // Tuþ baðlama deðiþtirildiðinde güncelleme
         GameInput.Instance.OnBindingRebind += GameInput_OnBindingRebind;
+
+        // Oyun durumu deðiþtiðinde güncelleme
         KitchenGameManager.Instance.OnStateChanged += KitchenGameManager_OnStateChanged;
 
+        // Görseli güncelle
         UpdateVisual();
 
+        // Tutorial UI'ý göster
         Show();
     }
 
-    private void KitchenGameManager_OnStateChanged(object sender, System.EventArgs e) {
-        if (KitchenGameManager.Instance.IsCountdownToStartActive()) {
+    // Oyun durumu deðiþtiðinde çaðrýlýr (Baþlangýç sayacý aktifse tutorial'ý gizle)
+    private void KitchenGameManager_OnStateChanged(object sender, System.EventArgs e)
+    {
+        if (KitchenGameManager.Instance.IsCountdownToStartActive())
+        {
             Hide();
         }
     }
 
-    private void GameInput_OnBindingRebind(object sender, System.EventArgs e) {
+    // Kullanýcý tuþ baðlamalarýný deðiþtirdiðinde çaðrýlýr
+    private void GameInput_OnBindingRebind(object sender, System.EventArgs e)
+    {
+        // Görseli güncelle
         UpdateVisual();
     }
 
-    private void UpdateVisual() {
+    // Tuþ baðlamalarýný alýp UI'ý günceller
+    private void UpdateVisual()
+    {
         keyMoveUpText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Move_Up);
         keyMoveDownText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Move_Down);
         keyMoveLeftText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Move_Left);
@@ -50,11 +64,15 @@ public class TutorialUI : MonoBehaviour {
         keyGamepadPauseText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Gamepad_Pause);
     }
 
-    private void Show() {
+    // Tutorial UI'ý göster
+    private void Show()
+    {
         gameObject.SetActive(true);
     }
 
-    private void Hide() {
+    // Tutorial UI'ý gizle
+    private void Hide()
+    {
         gameObject.SetActive(false);
     }
 }

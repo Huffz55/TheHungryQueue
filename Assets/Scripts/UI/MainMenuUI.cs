@@ -4,22 +4,27 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class MainMenuUI : MonoBehaviour {
+public class MainMenuUI : MonoBehaviour
+{
 
+    // UI butonlarý
+    [SerializeField] private Button playButton;  // Oyun baþlatma butonu
+    [SerializeField] private Button quitButton;  // Uygulamayý kapatma butonu
 
-    [SerializeField] private Button playButton;
-    [SerializeField] private Button quitButton;
-
-
-    private void Awake() {
+    // Awake metodu, sahne yüklendiðinde çalýþýr
+    private void Awake()
+    {
+        // Play butonuna týklama iþlemi ekler, oyunu baþlatýr
         playButton.onClick.AddListener(() => {
-            Loader.Load(Loader.Scene.GameScene);
-        });
-        quitButton.onClick.AddListener(() => {
-            Application.Quit();
+            Loader.Load(Loader.Scene.GameScene);  // GameScene sahnesini yükler
         });
 
-        Time.timeScale = 1f;
+        // Quit butonuna týklama iþlemi ekler, uygulamayý kapatýr
+        quitButton.onClick.AddListener(() => {
+            Application.Quit();  // Uygulamayý kapatýr
+        });
+
+        Time.timeScale = 1f;  // Oyun hýzýný (zaman akýþýný) normal seviyeye ayarlar
     }
 
 }

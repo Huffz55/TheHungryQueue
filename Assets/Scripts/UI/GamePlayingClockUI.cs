@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GamePlayingClockUI : MonoBehaviour {
+public class GamePlayingClockUI : MonoBehaviour
+{
 
+    [SerializeField] private Image timerImage;  // Zamanlayýcýyý görsel olarak gösterecek Image bileþeni
 
-    [SerializeField] private Image timerImage;
-
-
-    private void Update() {
+    // Update her frame'de çaðrýlýr, zamanlayýcýyý günceller
+    private void Update()
+    {
+        // Oyun zamanlayýcýsýnýn normalize edilmiþ deðerini alýr ve timerImage'ýn doluluk oranýný ayarlar
         timerImage.fillAmount = KitchenGameManager.Instance.GetGamePlayingTimerNormalized();
     }
 }
