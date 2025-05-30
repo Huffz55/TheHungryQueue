@@ -5,139 +5,140 @@ using UnityEngine;
 
 public class Player : MonoBehaviour, IKitchenObjectParent
 {
-
-    // Singleton instance of the Player
+    // Oyuncunun singleton örneði
     public static Player Instance { get; private set; }
 
-    // Event declarations for interaction and selected counter changes
+    // Etkileþim ve seçilen tezgah deðiþim olaylarý
     public event EventHandler OnPickedSomething;
     public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
 
-    // Event argument to pass the selected counter
+    // Seçilen tezgahý olayla birlikte iletmek için event argümaný
     public class OnSelectedCounterChangedEventArgs : EventArgs
     {
         public BaseCounter selectedCounter;
     }
 
-    // Player movement settings
+    // Oyuncunun hareket ayarlarý
     [SerializeField] private float moveSpeed = 7f;
-    [SerializeField] private GameInput gameInput;  // To handle player inputs
-    [SerializeField] private LayerMask countersLayerMask;  // Layer mask to check for counters
-    [SerializeField] private Transform kitchenObjectHoldPoint;  // Position where kitchen object is held
+    [SerializeField] private GameInput gameInput; // Oyuncu girdilerini iþlemek için
+    [SerializeField] private LayerMask countersLayerMask; // Tezgahlar için layer mask
+    [SerializeField] private Transform kitchenObjectHoldPoint; // Mutfak objesinin tutulduðu nokta
 
-    // Internal variables to track movement and interactions
-    private bool isWalking;  // To track if the player is walking
-    private Vector3 lastInteractDir;  // Direction of last interaction attempt
-    private BaseCounter selectedCounter;  // The currently selected counter
-    private KitchenObject kitchenObject;  // The kitchen object currently held by the player
+    // Dahili hareket ve etkileþim takip deðiþkenleri
+    private bool isWalking; // Oyuncunun yürüyüp yürümediði
+    private Vector3 lastInteractDir; // Son etkileþim yönü
+    private BaseCounter selectedCounter; // Seçilen tezgah
+    private KitchenObject kitchenObject; // Oyuncunun tuttuðu mutfak objesi
 
-    // Awake is called when the script instance is being loaded
+    // Script yüklendiðinde çaðrýlýr
     private void Awake()
     {
-        // Singleton pattern check
+        // Singleton kontrolü
         if (Instance != null)
         {
-            Debug.LogError("There is more than one Player instance");
+            Debug.LogError("Birden fazla Player nesnesi var!");
         }
         Instance = this;
     }
 
-    // Start is called before the first frame update
+    // Oyun baþladýðýnda çaðrýlýr
     private void Start()
     {
-        // Subscribe to input events for interaction
+        // Giriþ olaylarýna abone ol
         gameInput.OnInteractAction += GameInput_OnInteractAction;
         gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
     }
 
-    // Handle interaction with counters on primary action (e.g., picking or placing objects)
+    // Ana etkileþim (örneðin: eþya alma/býrakma) gerçekleþtiðinde çalýþýr
     private void GameInput_OnInteractAction(object sender, System.EventArgs e)
     {
         if (!KitchenGameManager.Instance.IsGamePlaying()) return;
 
-        // If there's a selected counter, interact with it
+        // Seçilen tezgah varsa onunla etkileþime geç
         if (selectedCounter != null)
         {
             selectedCounter.Interact(this);
         }
     }
 
-    // Handle alternate interaction (e.g., using or alternating an object)
+    // Alternatif etkileþim gerçekleþtiðinde çalýþýr (örneðin: karýþtýrma)
     private void GameInput_OnInteractAlternateAction(object sender, EventArgs e)
     {
         if (!KitchenGameManager.Instance.IsGamePlaying()) return;
 
-        // If there's a selected counter, perform alternate interaction
+        // Seçilen tezgah varsa alternatif etkileþime geç
         if (selectedCounter != null)
         {
             selectedCounter.InteractAlternate(this);
         }
     }
 
-    // Update is called once per frame
+    // Her frame'de çalýþýr
     private void Update()
     {
-        HandleMovement();  // Update movement based on player input
-        HandleInteractions();  // Check for interactions with counters
+        HandleMovement();     // Hareket iþlemleri
+        HandleInteractions(); // Etkileþim iþlemleri
     }
 
-    // Check if the player is walking
+    // Oyuncu yürüyor mu?
     public bool IsWalking()
     {
         return isWalking;
     }
 
-    // Handle movement logic
+    // Oyuncunun hareketlerini iþler
     private void HandleMovement()
     {
-        // Get movement direction from input
+        // Giriþten hareket yönünü al
         Vector2 inputVector = gameInput.GetMovementVectorNormalized();
         Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
 
-        // Calculate movement distance and check if the player can move
+        // Hareket mesafesi ve çarpýþma kontrolü
         float moveDistance = moveSpeed * Time.deltaTime;
-        float playerRadius = .7f;  // Player's radius for collision detection
-        float playerHeight = 2f;  // Player's height for collision detection
+        float playerRadius = .7f;
+        float playerHeight = 2f;
         bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDir, moveDistance);
 
         if (!canMove)
         {
-            // Try moving along only the X axis if full movement isn't possible
+            // Tam hareket olmuyorsa X yönünde dene
             Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
-            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
+            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) &&
+                      !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
 
             if (canMove)
             {
-                moveDir = moveDirX;  // Can move along X axis only
+                moveDir = moveDirX; // Sadece X yönünde hareket et
             }
             else
             {
-                // Attempt to move along only the Z axis if X axis movement fails
+                // X de olmuyorsa Z yönünde dene
                 Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
-                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
+                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) &&
+                          !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
 
                 if (canMove)
                 {
-                    moveDir = moveDirZ;  // Can move along Z axis only
+                    moveDir = moveDirZ; // Sadece Z yönünde hareket et
                 }
             }
         }
 
-        // Perform the movement if possible
+        // Hareket edilebiliyorsa pozisyonu güncelle
         if (canMove)
         {
             transform.position += moveDir * moveDistance;
         }
 
-        // Update walking status
+        // Yürüme durumu güncelle
         isWalking = moveDir != Vector3.zero;
 
-        // Smoothly rotate the player to face the movement direction
+        // Hareket yönüne doðru yumuþak dönüþ
         float rotateSpeed = 10f;
         transform.forward = Vector3.Slerp(transform.forward, moveDir, Time.deltaTime * rotateSpeed);
     }
 
-    // Handle interaction with counters based on player input
+    // Oyuncunun tezgahlarla etkileþimini kontrol eder
     private void HandleInteractions()
     {
         Vector2 inputVector = gameInput.GetMovementVectorNormalized();
@@ -145,16 +146,16 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
         if (moveDir != Vector3.zero)
         {
-            lastInteractDir = moveDir;  // Update last interaction direction
+            lastInteractDir = moveDir; // Son etkileþim yönünü güncelle
         }
 
-        // Check if the player can interact with a counter in the last interaction direction
+        // Belirli mesafedeki tezgahý kontrol et
         float interactDistance = 2f;
         if (Physics.Raycast(transform.position, lastInteractDir, out RaycastHit raycastHit, interactDistance, countersLayerMask))
         {
             if (raycastHit.transform.TryGetComponent(out BaseCounter baseCounter))
             {
-                // If the player is close to a counter, set it as the selected counter
+                // Tezgah varsa onu seç
                 if (baseCounter != selectedCounter)
                 {
                     SetSelectedCounter(baseCounter);
@@ -162,16 +163,16 @@ public class Player : MonoBehaviour, IKitchenObjectParent
             }
             else
             {
-                SetSelectedCounter(null);  // No counter found, deselect counter
+                SetSelectedCounter(null); // Tezgah bulunamadýysa seçimi kaldýr
             }
         }
         else
         {
-            SetSelectedCounter(null);  // No hit, deselect counter
+            SetSelectedCounter(null); // Iþýn çarpmadýysa seçimi kaldýr
         }
     }
 
-    // Set the selected counter and trigger the event
+    // Seçilen tezgahý belirler ve olayý tetikler
     private void SetSelectedCounter(BaseCounter selectedCounter)
     {
         this.selectedCounter = selectedCounter;
@@ -182,37 +183,37 @@ public class Player : MonoBehaviour, IKitchenObjectParent
         });
     }
 
-    // Get the transform where the kitchen object should follow
+    // Mutfak objesinin takip edeceði Transform
     public Transform GetKitchenObjectFollowTransform()
     {
         return kitchenObjectHoldPoint;
     }
 
-    // Set the kitchen object for the player
+    // Oyuncuya mutfak objesi ver
     public void SetKitchenObject(KitchenObject kitchenObject)
     {
         this.kitchenObject = kitchenObject;
 
-        // If a kitchen object is set, invoke the pick event
+        // Bir obje alýndýðýnda olay tetikle
         if (kitchenObject != null)
         {
             OnPickedSomething?.Invoke(this, EventArgs.Empty);
         }
     }
 
-    // Get the kitchen object the player is holding
+    // Oyuncunun tuttuðu mutfak objesini al
     public KitchenObject GetKitchenObject()
     {
         return kitchenObject;
     }
 
-    // Clear the kitchen object from the player
+    // Mutfak objesini temizle
     public void ClearKitchenObject()
     {
         kitchenObject = null;
     }
 
-    // Check if the player is holding a kitchen object
+    // Oyuncunun elinde mutfak objesi var mý?
     public bool HasKitchenObject()
     {
         return kitchenObject != null;
